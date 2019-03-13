@@ -11,11 +11,24 @@ class RSAAccumulator {
         private const val RSA_PRIME_SIZE = RSA_KEY_SIZE / 2
         //taken from: LLX, "Universal accumulators with efficient nonmembership proofs", construction 1
         private const val ACCUMULATED_PRIME_SIZE = 128
+
+        fun verifyMembership(
+            A: BigInteger,
+            x: BigInteger,
+            nonce: BigInteger,
+            proof: BigInteger,
+            n: BigInteger
+        ): Boolean {
+            return this.doVerifyMembership(A, hashToPrime(x, ACCUMULATED_PRIME_SIZE, nonce).first, proof, n)
+        }
+
+        private fun doVerifyMembership(A: BigInteger, x: BigInteger, proof: BigInteger, n: BigInteger): Boolean {
+            return proof.modPow(x, n) == A
+        }
     }
 
     val A0: BigInteger
-    var A: BigInteger
-        private set
+    private var A: BigInteger
     val n: BigInteger
     private val data = mutableMapOf<BigInteger, BigInteger>()
 
@@ -30,22 +43,30 @@ class RSAAccumulator {
         A = A0
     }
 
-    fun getNonce(x: BigInteger): BigInteger? {
+    fun getNonce(x: BigInteger): BigInteger {
+        return data.getValue(x)
+    }
+
+    fun getNonceOrNull(x: BigInteger): BigInteger? {
         return data[x]
     }
 
     fun add(x: BigInteger): BigInteger {
-        if (data.containsKey(x)) {
-            return A
+        return if (data.containsKey(x)) {
+            A
         } else {
             val (hashPrime, nonce) = hashToPrime(x, ACCUMULATED_PRIME_SIZE)
             A = A.modPow(hashPrime, n)
             data[x] = nonce
-            return A
+            A
         }
     }
 
-    fun proveMembership(x: BigInteger): BigInteger? {
+    fun proveMembership(x: BigInteger): BigInteger {
+        return this.proveMembershipOrNull(x) ?: throw NoSuchElementException("Can not find member $x")
+    }
+
+    fun proveMembershipOrNull(x: BigInteger): BigInteger? {
         return if (!data.containsKey(x)) {
             null
         } else {
@@ -57,14 +78,6 @@ class RSAAccumulator {
             }
             A0.modPow(product, n)
         }
-    }
-
-    fun verifyMembership(x: BigInteger, nonce: BigInteger, proof: BigInteger): Boolean {
-        return this.doVerifyMembership(hashToPrime(x, ACCUMULATED_PRIME_SIZE, nonce).first, proof)
-    }
-
-    private fun doVerifyMembership(x: BigInteger, proof: BigInteger): Boolean {
-        return proof.modPow(x, n) == A
     }
 
     fun delete(x: BigInteger): BigInteger {
