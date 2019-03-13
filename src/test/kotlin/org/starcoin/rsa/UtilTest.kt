@@ -24,7 +24,7 @@ class UtilTest {
     @Test
     fun testHashToPrime() {
         val x = Random.nextBigInteger()
-        val (h, nonce) = hashToPrime(x, 128)
+        val (h, _) = hashToPrime(x, 128)
         Assert.assertTrue(h.isProbablePrime(100))
         Assert.assertTrue(Math.log(h.toDouble()) < 128)
     }
