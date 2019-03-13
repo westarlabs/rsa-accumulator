@@ -12,6 +12,7 @@ class RSAAccumulator {
         //taken from: LLX, "Universal accumulators with efficient nonmembership proofs", construction 1
         private const val ACCUMULATED_PRIME_SIZE = 128
 
+        @JvmStatic
         fun verifyMembership(
             A: BigInteger,
             x: BigInteger,
